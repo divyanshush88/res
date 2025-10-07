@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Royal Cafe & Restaurant | Billing System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles to enhance the UI */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-brand {
+            font-family: 'Playfair Display', serif;
+        }
+        .menu-item-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .menu-item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .tab-active {
+            border-color: #4f46e5;
+            color: #4f46e5;
+            background-color: #eef2ff;
+        }
+        .modal {
+            transition: opacity 0.3s ease;
+        }
+        .bill-item:last-child {
+            border-bottom: none;
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #billModal, #billModal * {
+                visibility: visible;
+            }
+            #billModal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            #bill-content {
+                box-shadow: none !important;
+                border: none !important;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Main Application Container -->
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="font-brand text-4xl md:text-5xl text-gray-800">The Royal Cafe & Restaurant</h1>
+            <p class="text-gray-500 mt-2">Bayana, Rajasthan - Management Portal</p>
+        </header>
+                <a href="dashboard.html" class="nav-link flex items-center px-4 py-3 rounded-lg font-semibold nav-active">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    Dashboard
+                </a>
+
+        <!-- Main Content Grid -->
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column: Menu & Booking -->
+            <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg">
+                <!-- Tabs for Order/Booking -->
+                <div class="flex border-b mb-6">
+                    <button id="tabOrder" class="py-3 px-6 font-semibold text-gray-600 border-b-2 tab-active" onclick="window.app.switchView('order')">Place Order</button>
+                    <button id="tabBooking" class="py-3 px-6 font-semibold text-gray-500 border-b-2 border-transparent" onclick="window.app.switchView('booking')">Book a Table</button>
+                </div>
+
+                <!-- Order View -->
+                <div id="orderView">
+                    <!-- Category Filters -->
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        <button class="filter-btn bg-indigo-500 text-white py-2 px-4 rounded-full text-sm font-semibold" onclick="window.app.filterMenu('all', this)">All</button>
+                        <button class="filter-btn bg-gray-200 text-gray-700 py-2 px-4 rounded-full text-sm font-semibold" onclick="window.app.filterMenu('Soups', this)">Soups</button>
+                        <button class="filter-btn bg-gray-200 text-gray-700 py-2 px-4 rounded-full text-sm font-semibold" onclick="window.app.filterMenu('Appetizers', this)">Appetizers</button>
+                        <button class="filter-btn bg-gray-200 text-gray-700 py-2 px-4 rounded-full text-sm font-semibold" onclick="window.app.filterMenu('Main Course', this)">Main Course</button>
+                        <button class="filter-btn bg-gray-200 text-gray-700 py-2 px-4 rounded-full text-sm font-semibold" onclick="window.app.filterMenu('Indian Breads', this)">Breads</button>
+                        <button class="filter-btn bg-gray-200 text-gray-700 py-2 px-4 rounded-full text-sm font-semibold" onclick="window.app.filterMenu('Rice & Biryani', this)">Rice & Biryani</button>
+                        <button class="filter-btn bg-gray-200 text-gray-700 py-2 px-4 rounded-full text-sm font-semibold" onclick="window.app.filterMenu('Chinese', this)">Chinese</button>
+                        <button class="filter-btn bg-gray-200 text-gray-700 py-2 px-4 rounded-full text-sm font-semibold" onclick="window.app.filterMenu('Beverages', this)">Beverages</button>
+                        <button class="filter-btn bg-gray-200 text-gray-700 py-2 px-4 rounded-full text-sm font-semibold" onclick="window.app.filterMenu('Desserts', this)">Desserts</button>
+                    </div>
+
+                    <!-- Menu Items Grid -->
+                    <div id="menuGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <!-- Menu items will be dynamically inserted here -->
+                        <p id="loadingMenuMessage" class="text-gray-500 col-span-full text-center py-10">Loading menu...</p>
+                    </div>
+                </div>
+
+                <!-- Booking View -->
+                <div id="bookingView" class="hidden">
+                    <h2 class="text-2xl font-bold mb-4">Table Reservation</h2>
+                    <form id="bookingForm" class="space-y-4">
+                        <div>
+                            <label for="customerName" class="block text-sm font-medium text-gray-700">Full Name</label>
+                            <input type="text" id="customerName" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                        </div>
+                        <div>
+                            <label for="phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                            <input type="tel" id="phone" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                        </div>
+                        <div>
+                            <label for="guests" class="block text-sm font-medium text-gray-700">Number of Guests</label>
+                            <input type="number" id="guests" min="1" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                        </div>
+                        <div>
+                            <label for="bookingDate" class="block text-sm font-medium text-gray-700">Date</label>
+                            <input type="date" id="bookingDate" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                        </div>
+                        <div>
+                            <label for="bookingTime" class="block text-sm font-medium text-gray-700">Time</label>
+                            <input type="time" id="bookingTime" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                        </div>
+                        <button type="submit" id="bookTableBtn" class="w-full bg-indigo-600 text-white py-3 px-4 rounded-md font-semibold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Book Table</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column: Current Order Bill -->
+            <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg h-fit sticky top-8">
+                <h2 class="text-2xl font-bold border-b pb-4 mb-4">Current Order</h2>
+                <div id="billItems" class="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
+                    <!-- Bill items will be dynamically inserted here -->
+                     <p id="emptyOrderMessage" class="text-gray-500 text-center py-8">Your order is empty. Add items from the menu.</p>
+                </div>
+
+                <!-- Bill Calculation -->
+                <div id="billCalculation" class="border-t pt-4 mt-4 space-y-2 hidden">
+                    <div class="flex justify-between font-medium">
+                        <span>Subtotal</span>
+                        <span id="subtotal">₹0.00</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600">
+                        <span>GST (5%)</span>
+                        <span id="gst">₹0.00</span>
+                    </div>
+                    <div class="flex justify-between font-bold text-xl mt-2">
+                        <span>Grand Total</span>
+                        <span id="grandTotal">₹0.00</span>
+                    </div>
+                    <button id="generateBillBtn" class="w-full bg-green-600 text-white py-3 mt-4 rounded-md font-semibold hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Generate Bill</button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Bill Modal -->
+    <div id="billModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div id="bill-content" class="bg-white rounded-lg shadow-2xl max-w-sm w-full p-6 mx-auto">
+            <div class="text-center mb-6">
+                <h2 class="font-brand text-2xl">The Royal Cafe & Restaurant</h2>
+                <p class="text-sm text-gray-500">Bayana, Rajasthan</p>
+                <p class="text-sm text-gray-500" id="billDate"></p>
+                <p class="text-sm text-gray-500" id="billTime"></p>
+                <p class="text-sm font-mono mt-2" id="billNumber"></p>
+            </div>
+            <div class="border-t border-b border-dashed py-4">
+                <div id="modalBillItems" class="space-y-2">
+                    <!-- Final bill items here -->
+                </div>
+            </div>
+            <div class="py-4 space-y-2 text-sm">
+                <div class="flex justify-between font-semibold"><span>Subtotal:</span> <span id="modalSubtotal"></span></div>
+                <div class="flex justify-between"><span>GST (5%):</span> <span id="modalGst"></span></div>
+                <div class="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>Total:</span> <span id="modalGrandTotal"></span></div>
+            </div>
+            <p class="text-center text-xs text-gray-500 mt-4">Thank you for your visit!</p>
+            <div class="mt-6 flex gap-3 no-print">
+                <button onclick="window.app.printBill()" class="w-full bg-indigo-600 text-white py-2 rounded-md font-semibold hover:bg-indigo-700">Print</button>
+                <button onclick="window.app.closeModal('billModal')" class="w-full bg-gray-300 text-gray-800 py-2 rounded-md font-semibold hover:bg-gray-400">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Booking Confirmation Modal -->
+     <div id="bookingConfirmModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-2xl max-w-sm w-full p-8 mx-auto text-center">
+             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                 <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                 </svg>
+             </div>
+             <h3 class="text-lg leading-6 font-medium text-gray-900">Booking Confirmed!</h3>
+             <div class="mt-2 px-7 py-3">
+                 <p class="text-sm text-gray-500" id="bookingConfirmationDetails"></p>
+             </div>
+             <div class="mt-4">
+                 <button onclick="window.app.closeModal('bookingConfirmModal')" class="w-full bg-indigo-600 text-white py-2 rounded-md font-semibold hover:bg-indigo-700">OK</button>
+             </div>
+        </div>
+     </div>
+
+
+    <script>
+        // --- DATA (MENU) ---
+        // This will be populated by the fetchMenu function.
+        let menu = []; 
+        let currentOrder = [];
+
+        // Fallback data in case the API call fails, allowing the app to still be demonstrated.
+        const fallbackMenu = [
+            // Soups
+            { id: 101, name: 'Tomato Soup', category: 'Soups', price: 120.00, image: './imgs/tomato_soup.jpg' },
+            { id: 102, name: 'Manchow Soup', category: 'Soups', price: 140.00, image: './imgs/manchow_soup.jpg' },
+            { id: 103, name: 'Hot & Sour Soup', category: 'Soups', price: 140.00, image: './imgs/hot_and_sour_soup.jpg' },
+            { id: 104, name: 'Sweet Corn Soup', category: 'Soups', price: 130.00, image: './imgs/sweet_corn_soup.jpg' },
+            
+            // Appetizers
+            { id: 1, name: 'Paneer Tikka', category: 'Appetizers', price: 280.00, image: './imgs/paneer_tikka.jpg' },
+            { id: 2, name: 'Vegetable Samosa', category: 'Appetizers', price: 120.00, image: './imgs/vegetable_samosa.jpg' },
+            { id: 201, name: 'Hara Bhara Kebab', category: 'Appetizers', price: 250.00, image: './imgs/hara_bhara_kebab.jpg' },
+            { id: 202, name: 'Chilli Paneer Dry', category: 'Appetizers', price: 290.00, image: './imgs/chilli_paneer_dry.jpg' },
+            { id: 203, name: 'Veg Manchurian Dry', category: 'Appetizers', price: 260.00, image: './imgs/veg_manchurian_dry.jpg' },
+            { id: 204, name: 'Spring Roll', category: 'Appetizers', price: 220.00, image: './imgs/spring_roll.jpg' },
+            { id: 205, name: 'French Fries', category: 'Appetizers', price: 150.00, image: './imgs/french_fries.jpg' },
+
+            // Main Course
+            { id: 3, name: 'Dal Makhani', category: 'Main Course', price: 350.00, image: './imgs/dal_makhani.jpg' },
+            { id: 4, name: 'Shahi Paneer', category: 'Main Course', price: 380.00, image: './imgs/shahi_paneer.jpg' },
+            { id: 301, name: 'Kadai Paneer', category: 'Main Course', price: 370.00, image: './imgs/kadai_paneer.jpg' },
+            { id: 302, name: 'Paneer Butter Masala', category: 'Main Course', price: 380.00, image: './imgs/paneer_butter_masala.jpg' },
+            { id: 303, name: 'Palak Paneer', category: 'Main Course', price: 360.00, image: './imgs/palak_paneer.jpg' },
+            { id: 304, name: 'Malai Kofta', category: 'Main Course', price: 390.00, image: './imgs/malai_kofta.jpg' },
+            { id: 305, name: 'Chana Masala', category: 'Main Course', price: 320.00, image: './imgs/chana_masala.jpg' },
+            { id: 306, name: 'Mix Vegetable', category: 'Main Course', price: 310.00, image: './imgs/mix_vegetable.jpg' },
+            { id: 307, name: 'Aloo Gobi', category: 'Main Course', price: 290.00, image: './imgs/aloo_gobi.jpg' },
+            { id: 308, name: 'Dal Tadka', category: 'Main Course', price: 250.00, image: './imgs/dal_tadka.jpg' },
+            { id: 309, name: 'Gatte ki Sabji', category: 'Main Course', price: 330.00, image: './imgs/gatte_ki_sabji.jpg' },
+            
+            // Indian Breads
+            { id: 5, name: 'Butter Naan', category: 'Indian Breads', price: 60.00, image: './imgs/butter_naan.jpg' },
+            { id: 401, name: 'Plain Naan', category: 'Indian Breads', price: 50.00, image: './imgs/plain_naan.jpg' },
+            { id: 402, name: 'Garlic Naan', category: 'Indian Breads', price: 75.00, image: './imgs/garlic_naan.jpg' },
+            { id: 403, name: 'Tandoori Roti', category: 'Indian Breads', price: 30.00, image: './imgs/tandoori_roti.jpg' },
+            { id: 404, name: 'Butter Roti', category: 'Indian Breads', price: 40.00, image: './imgs/butter_roti.jpg' },
+            { id: 405, name: 'Laccha Paratha', category: 'Indian Breads', price: 70.00, image: './imgs/laccha_paratha.jpg' },
+
+            // Rice & Biryani
+            { id: 6, name: 'Veg Biryani', category: 'Rice & Biryani', price: 320.00, image: './imgs/veg_biryani.jpg' },
+            { id: 501, name: 'Jeera Rice', category: 'Rice & Biryani', price: 220.00, image: './imgs/jeera_rice.jpg' },
+            { id: 502, name: 'Steamed Rice', category: 'Rice & Biryani', price: 180.00, image: './imgs/steamed_rice.jpg' },
+            { id: 503, name: 'Veg Pulao', category: 'Rice & Biryani', price: 280.00, image: './imgs/veg_pulao.jpg' },
+            
+            // Chinese
+            { id: 601, name: 'Veg Fried Rice', category: 'Chinese', price: 260.00, image: './imgs/veg_fried_rice.jpg' },
+            { id: 602, name: 'Veg Hakka Noodles', category: 'Chinese', price: 250.00, image: './imgs/veg_hakka_noodles.jpg' },
+            { id: 603, name: 'Chilli Garlic Noodles', category: 'Chinese', price: 270.00, image: './imgs/chilli_garlic_noodles.jpg' },
+            { id: 604, name: 'Veg Manchurian Gravy', category: 'Chinese', price: 280.00, image: './imgs/veg_manchurian_gravy.jpg' },
+
+            // Beverages
+            { id: 7, name: 'Masala Chai', category: 'Beverages', price: 80.00, image: './imgs/masala_chai.jpg' },
+            { id: 8, name: 'Fresh Lime Soda', category: 'Beverages', price: 100.00, image: './imgs/fresh_lime_soda.jpg' },
+            { id: 701, name: 'Buttermilk (Chaas)', category: 'Beverages', price: 90.00, image: './imgs/buttermilk_chaas.jpg' },
+            { id: 702, name: 'Sweet Lassi', category: 'Beverages', price: 120.00, image: './imgs/sweet_lassi.jpg' },
+            { id: 703, name: 'Mango Shake', category: 'Beverages', price: 180.00, image: './imgs/mango_shake.jpg' },
+            { id: 704, name: 'Cold Coffee', category: 'Beverages', price: 160.00, image: './imgs/cold_coffee.jpg' },
+            { id: 705, name: 'Soft Drink', category: 'Beverages', price: 60.00, image: './imgs/soft_drink.jpg' },
+
+            // Desserts
+            { id: 9, name: 'Gulab Jamun', category: 'Desserts', price: 150.00, image: './imgs/gulab_jamun.jpg' },
+            { id: 10, name: 'Rasmalai', category: 'Desserts', price: 180.00, image: './imgs/rasmalai.jpg' },
+            { id: 801, name: 'Gajar ka Halwa', category: 'Desserts', price: 170.00, image: './imgs/gajar_ka_halwa.jpg' },
+            { id: 802, name: 'Vanilla Ice Cream', category: 'Desserts', price: 100.00, image: './imgs/vanilla_ice_cream.jpg' },
+            { id: 803, name: 'Chocolate Ice Cream', category: 'Desserts', price: 120.00, image: './imgs/chocolate_ice_cream.jpg' },
+        ];
+        
+
+        // --- DOM ELEMENTS ---
+        const menuGrid = document.getElementById('menuGrid');
+        const billItemsContainer = document.getElementById('billItems');
+        const emptyOrderMessage = document.getElementById('emptyOrderMessage');
+        const billCalculationDiv = document.getElementById('billCalculation');
+
+        // --- CORE LOGIC ---
+        async function fetchMenu() {
+            try {
+                const response = await fetch('http://localhost:3000/api/menu');
+                if (!response.ok) throw new Error('Failed to fetch menu');
+                menu = await response.json();
+
+                // If menu is empty, seed it with fallback data
+                if (menu.length === 0) {
+                    console.log("Menu is empty, seeding with fallback data...");
+                    try {
+                        for (const item of fallbackMenu) {
+                            await fetch('http://localhost:3000/api/menu', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(item)
+                            });
+                        }
+                        // Fetch again after seeding
+                        const newResponse = await fetch('http://localhost:3000/api/menu');
+                        if (newResponse.ok) {
+                            menu = await newResponse.json();
+                        }
+                    } catch (seedError) {
+                        console.error("Seeding failed:", seedError);
+                    }
+                }
+            } catch (error) {
+                console.error("Could not fetch menu from server:", error);
+                console.log("Using fallback menu data as a backup.");
+                menu = fallbackMenu;
+            }
+            if (menu.length === 0) {
+                menu = fallbackMenu;
+            }
+            renderMenu('all');
+        }
+
+        function renderMenu(category = 'all') {
+            menuGrid.innerHTML = '';
+            if (menu.length === 0) {
+                 menuGrid.innerHTML = '<p class="text-gray-500 col-span-full text-center py-10">Menu could not be loaded.</p>';
+                 return;
+            }
+            const filteredMenu = category === 'all' ? menu : menu.filter(item => item.category === category);
+            
+            filteredMenu.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'menu-item-card bg-gray-50 rounded-xl overflow-hidden border border-gray-200';
+                card.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}" class="w-full h-32 object-cover">
+                    <div class="p-4">
+                        <h3 class="font-bold text-lg">${item.name}</h3>
+                        <p class="text-gray-500 text-sm">${item.category}</p>
+                        <div class="flex justify-between items-center mt-4">
+                            <span class="font-bold text-xl text-indigo-600">₹${item.price.toFixed(2)}</span>
+                            <button class="bg-indigo-100 text-indigo-700 font-semibold py-2 px-4 rounded-lg hover:bg-indigo-200" onclick="window.app.addToOrder(${item.id})">Add</button>
+                        </div>
+                    </div>
+                `;
+                menuGrid.appendChild(card);
+            });
+        }
+
+        function renderOrder() {
+            billItemsContainer.innerHTML = '';
+            if (currentOrder.length === 0) {
+                emptyOrderMessage.classList.remove('hidden');
+                billCalculationDiv.classList.add('hidden');
+                return;
+            }
+            emptyOrderMessage.classList.add('hidden');
+            billCalculationDiv.classList.remove('hidden');
+
+            currentOrder.forEach(orderItem => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'bill-item flex items-center justify-between pb-2 mb-2 border-b border-gray-100';
+                itemDiv.innerHTML = `
+                    <div>
+                        <p class="font-semibold">${orderItem.name}</p>
+                        <p class="text-sm text-gray-500">₹${orderItem.price.toFixed(2)}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="bg-gray-200 w-6 h-6 rounded-full font-bold" onclick="window.app.updateQuantity(${orderItem.id}, -1)">-</button>
+                        <span>${orderItem.quantity}</span>
+                        <button class="bg-gray-200 w-6 h-6 rounded-full font-bold" onclick="window.app.updateQuantity(${orderItem.id}, 1)">+</button>
+                    </div>
+                `;
+                billItemsContainer.appendChild(itemDiv);
+            });
+
+            calculateTotal();
+        }
+        
+        // --- PUBLIC FUNCTIONS for inline event handlers ---
+        window.app = {
+             addToOrder(itemId) {
+                const existingItem = currentOrder.find(item => item.id === itemId);
+                if (existingItem) {
+                    existingItem.quantity++;
+                } else {
+                    const menuItem = menu.find(item => item.id === itemId);
+                    currentOrder.push({ ...menuItem, quantity: 1 });
+                }
+                renderOrder();
+            },
+
+            updateQuantity(itemId, change) {
+                const orderItem = currentOrder.find(item => item.id === itemId);
+                if (orderItem) {
+                    orderItem.quantity += change;
+                    if (orderItem.quantity <= 0) {
+                        currentOrder = currentOrder.filter(item => item.id !== itemId);
+                    }
+                }
+                renderOrder();
+            },
+            switchView, filterMenu, closeModal, printBill
+        };
+        
+        function calculateTotal() {
+            const subtotal = currentOrder.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const gst = subtotal * 0.05;
+            const grandTotal = subtotal + gst;
+
+            document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+            document.getElementById('gst').textContent = `₹${gst.toFixed(2)}`;
+            document.getElementById('grandTotal').textContent = `₹${grandTotal.toFixed(2)}`;
+        }
+
+        async function generateAndSaveBill() {
+            if (currentOrder.length === 0) return;
+            const btn = document.getElementById('generateBillBtn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            const subtotal = currentOrder.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const gst = subtotal * 0.05;
+            const grandTotal = subtotal + gst;
+            
+            const orderData = {
+                items: currentOrder.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, price: item.price })),
+                subtotal,
+                gst,
+                grandTotal,
+                createdAt: new Date().toISOString()
+            };
+
+            try {
+                const response = await fetch('http://localhost:3000/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData)
+                });
+                if (!response.ok) throw new Error('Failed to save order');
+                const savedOrder = await response.json();
+                const orderId = savedOrder.orderId;
+                console.log("Order saved with ID: ", orderId);
+                
+                const now = new Date();
+                document.getElementById('billDate').textContent = `Date: ${now.toLocaleDateString()}`;
+                document.getElementById('billTime').textContent = `Time: ${now.toLocaleTimeString()}`;
+                document.getElementById('billNumber').textContent = `Bill No: #${orderId.slice(-6)}`;
+
+                const modalItemsContainer = document.getElementById('modalBillItems');
+                modalItemsContainer.innerHTML = '';
+                currentOrder.forEach(item => {
+                    const itemHtml = `
+                        <div class="flex justify-between text-sm">
+                            <span>${item.name} (x${item.quantity})</span>
+                            <span>₹${(item.price * item.quantity).toFixed(2)}</span>
+                        </div>
+                    `;
+                    modalItemsContainer.innerHTML += itemHtml;
+                });
+                
+                document.getElementById('modalSubtotal').textContent = `₹${subtotal.toFixed(2)}`;
+                document.getElementById('modalGst').textContent = `₹${gst.toFixed(2)}`;
+                document.getElementById('modalGrandTotal').textContent = `₹${grandTotal.toFixed(2)}`;
+                
+                openModal('billModal');
+
+            } catch (error) {
+                console.error("Error adding order to database: ", error);
+                alert("Failed to save order. A running backend server is required.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Generate Bill';
+            }
+        }
+
+        function printBill() {
+            window.print();
+        }
+
+        async function handleBooking(event) {
+            event.preventDefault();
+            const btn = document.getElementById('bookTableBtn');
+            btn.disabled = true;
+            btn.textContent = 'Booking...';
+            
+            const dateValue = document.getElementById('bookingDate').value;
+            const timeValue = document.getElementById('bookingTime').value;
+
+            const booking = {
+                name: document.getElementById('customerName').value,
+                phone: document.getElementById('phone').value,
+                guests: parseInt(document.getElementById('guests').value, 10),
+                bookingDateTime: new Date(`${dateValue}T${timeValue}`).toISOString(),
+                createdAt: new Date().toISOString()
+            };
+            
+            try {
+                // NOTE: This requires a backend server with an API endpoint (e.g., /api/bookings)
+                // that connects to a MongoDB database. This fetch call is a placeholder.
+                /*
+                const response = await fetch('/api/bookings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(booking)
+                });
+                if (!response.ok) throw new Error('Failed to save booking');
+                const savedBooking = await response.json();
+                console.log("Booking saved with ID: ", savedBooking._id);
+                */
+
+                // For demonstration, we'll simulate a successful save.
+                console.log("Booking data to be sent:", booking);
+
+                const bookingDate = new Date(booking.bookingDateTime);
+                const confirmationDetails = `Table for ${booking.guests} booked under the name ${booking.name} for ${bookingDate.toLocaleDateString()} at ${bookingDate.toLocaleTimeString()}.`;
+                document.getElementById('bookingConfirmationDetails').textContent = confirmationDetails;
+                openModal('bookingConfirmModal');
+                event.target.reset(); // Reset form
+            } catch (error) {
+                console.error("Error saving booking:", error);
+                alert("Failed to save booking. A running backend server is required.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Book Table';
+            }
+        }
+
+        // --- UI & EVENT LISTENERS ---
+        function switchView(view) {
+            const orderView = document.getElementById('orderView');
+            const bookingView = document.getElementById('bookingView');
+            const tabOrder = document.getElementById('tabOrder');
+            const tabBooking = document.getElementById('tabBooking');
+
+            if (view === 'order') {
+                orderView.classList.remove('hidden');
+                bookingView.classList.add('hidden');
+                tabOrder.classList.add('tab-active');
+                tabBooking.classList.remove('tab-active');
+            } else {
+                orderView.classList.add('hidden');
+                bookingView.classList.remove('hidden');
+                tabOrder.classList.remove('tab-active');
+                tabBooking.classList.add('tab-active');
+            }
+        }
+        
+        function filterMenu(category, element) {
+            renderMenu(category);
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-500', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            element.classList.add('bg-indigo-500', 'text-white');
+            element.classList.remove('bg-gray-200', 'text-gray-700');
+        }
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+
+            if (modalId === 'billModal') {
+                currentOrder = [];
+                renderOrder();
+            }
+        }
+
+        document.getElementById('generateBillBtn').addEventListener('click', generateAndSaveBill);
+        document.getElementById('bookingForm').addEventListener('submit', handleBooking);
+        
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            fetchMenu();
+            renderOrder();
+            // Set min date for booking
+            document.getElementById('bookingDate').min = new Date().toISOString().split("T")[0];
+        };
+    </script>
+</body>
+</html>
+
+mongodb+srv://divyanshush88:ds3465797@cluster022.ekdup.mongodb.net/?retryWrites=true&w=majority&appName=Cluster022
