@@ -89,6 +89,10 @@
 
                 <!-- Order View -->
                 <div id="orderView">
+                    <!-- Search Bar -->
+                    <div class="mb-6">
+                        <input type="text" id="searchInput" placeholder="Search menu items..." class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
                     <!-- Category Filters -->
                     <div class="flex flex-wrap gap-2 mb-6">
                         <button class="filter-btn bg-indigo-500 text-white py-2 px-4 rounded-full text-sm font-semibold" onclick="window.app.filterMenu('all', this)">All</button>
@@ -217,8 +221,10 @@
     <script>
         // --- DATA (MENU) ---
         // This will be populated by the fetchMenu function.
-        let menu = []; 
+        let menu = [];
         let currentOrder = [];
+        let currentCategory = 'all';
+        let currentSearch = '';
 
         // Fallback data in case the API call fails, allowing the app to still be demonstrated.
         const fallbackMenu = [
@@ -332,13 +338,17 @@
             renderMenu('all');
         }
 
-        function renderMenu(category = 'all') {
+        function renderMenu(category = 'all', searchTerm = '') {
             menuGrid.innerHTML = '';
             if (menu.length === 0) {
                  menuGrid.innerHTML = '<p class="text-gray-500 col-span-full text-center py-10">Menu could not be loaded.</p>';
                  return;
             }
-            const filteredMenu = category === 'all' ? menu : menu.filter(item => item.category === category);
+            const filteredMenu = menu.filter(item => {
+                const matchesCategory = category === 'all' || item.category === category;
+                const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+                return matchesCategory && matchesSearch;
+            });
             
             filteredMenu.forEach(item => {
                 const card = document.createElement('div');
@@ -551,7 +561,8 @@
         }
         
         function filterMenu(category, element) {
-            renderMenu(category);
+            currentCategory = category;
+            renderMenu(currentCategory, currentSearch);
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.remove('bg-indigo-500', 'text-white');
                 btn.classList.add('bg-gray-200', 'text-gray-700');
@@ -577,6 +588,10 @@
             }
         }
 
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            currentSearch = e.target.value;
+            renderMenu(currentCategory, currentSearch);
+        });
         document.getElementById('generateBillBtn').addEventListener('click', generateAndSaveBill);
         document.getElementById('bookingForm').addEventListener('submit', handleBooking);
         

@@ -96,6 +96,7 @@
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('nav-active'));
             link.classList.add('nav-active');
             for (const view in views) views[view].classList.toggle('hidden', view !== targetView);
+            if (targetView === 'menu') fetchMenuItems();
         });
 
         // --- DATA FETCHING & RENDERING ---
@@ -145,7 +146,13 @@
                 const res = await fetch(`${API_BASE_URL}/menu`);
                 const menuItems = await res.json();
                 
-                menuItems.sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
+                menuItems.sort((a, b) => {
+                    const aCat = a.category || '';
+                    const aName = a.name || '';
+                    const bCat = b.category || '';
+                    const bName = b.name || '';
+                    return aCat.localeCompare(bCat) || aName.localeCompare(bName);
+                });
                 
                 menuTableBody.innerHTML = '';
                 if (menuItems.length === 0) {
