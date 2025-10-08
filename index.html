@@ -507,9 +507,6 @@
             };
             
             try {
-                // NOTE: This requires a backend server with an API endpoint (e.g., /api/bookings)
-                // that connects to a MongoDB database. This fetch call is a placeholder.
-                /*
                 const response = await fetch('/api/bookings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -517,11 +514,7 @@
                 });
                 if (!response.ok) throw new Error('Failed to save booking');
                 const savedBooking = await response.json();
-                console.log("Booking saved with ID: ", savedBooking._id);
-                */
-
-                // For demonstration, we'll simulate a successful save.
-                console.log("Booking data to be sent:", booking);
+                console.log("Booking saved with ID: ", savedBooking.bookingId);
 
                 const bookingDate = new Date(booking.bookingDateTime);
                 const confirmationDetails = `Table for ${booking.guests} booked under the name ${booking.name} for ${bookingDate.toLocaleDateString()} at ${bookingDate.toLocaleTimeString()}.`;
@@ -597,3 +590,5 @@
     </script>
 </body>
 </html>
+
+mongodb+srv://divyanshush88:ds3465797@cluster022.ekdup.mongodb.net/?retryWrites=true&w=majority&appName=Cluster022
